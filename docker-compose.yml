@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    container_name: medilink-sqlserver
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: MyP@ssw0rd123!
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    networks:
+      - medilink-network
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P MyP@ssw0rd123! -Q 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Caching (optional)
+  redis:
+    image: redis:7-alpine
+    container_name: medilink-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - medilink-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Backend
+  medilink-api:
+    build:
+      context: .
+      dockerfile: ./src/MediLink.API/Dockerfile
+    container_name: medilink-api
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=MediLink;User Id=sa;Password=MyP@ssw0rd123!;"
+      Jwt__Key: "your-super-secret-key-min-32-chars-do-not-use-in-production-change-this-value"
+      Jwt__Issuer: "MediLink"
+      Jwt__Audience: "MediLink"
+      Stripe__SecretKey: "sk_test_your_stripe_secret_key"
+      Stripe__PublishableKey: "pk_test_your_stripe_publishable_key"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./src:/app/src
+    networks:
+      - medilink-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend
+  medilink-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: medilink-frontend
+    depends_on:
+      - medilink-api
+    environment:
+      VITE_API_BASE_URL: http://medilink-api:5000
+      VITE_STRIPE_PUBLISHABLE_KEY: pk_test_your_stripe_publishable_key
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend/src:/app/src
+    networks:
+      - medilink-network
+
+volumes:
+  sqlserver_data:
+  redis_data:
+
+networks:
+  medilink-network:
+    driver: bridge
