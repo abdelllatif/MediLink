@@ -14,6 +14,7 @@ public interface IAppointmentRepository : IRepository<Appointment>
     Task<IEnumerable<Appointment>> GetDoctorAppointmentsAsync(Guid doctorId);
     Task<IEnumerable<Appointment>> GetAppointmentsByStatusAsync(AppointmentStatus status);
     Task<IEnumerable<Appointment>> GetUpcomingAppointmentsAsync(int daysAhead = 7);
+    Task<IEnumerable<Appointment>> GetTodayAppointmentsAsync();
     Task<int> GetPendingPaymentCountAsync();
 }
 
@@ -64,6 +65,18 @@ public class AppointmentRepository : BaseRepository<Appointment>, IAppointmentRe
                        a.Status == AppointmentStatus.Scheduled &&
                        a.TimeSlot.Date <= futureDate)
             .OrderBy(a => a.TimeSlot.Date)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<Appointment>> GetTodayAppointmentsAsync()
+    {
+        var today = DateTime.UtcNow.Date;
+        return await _dbSet
+            .Include(a => a.Patient)
+            .Include(a => a.Doctor)
+            .Include(a => a.TimeSlot)
+            .Where(a => !a.IsDeleted && a.TimeSlot.Date == today)
+            .OrderBy(a => a.TimeSlot.StartTime)
             .ToListAsync();
     }
 

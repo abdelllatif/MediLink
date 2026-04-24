@@ -15,10 +15,7 @@ public enum UserRole
     Specialist = 2,
 
     /// <summary>Nurse (infirmier)</summary>
-    Nurse = 3,
-
-    /// <summary>Patient</summary>
-    Patient = 4
+    Nurse = 3
 }
 
 /// <summary>

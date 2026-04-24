@@ -5,8 +5,8 @@ namespace MediLink.Domain.Entities;
 /// </summary>
 public class Nurse : User
 {
-    public Guid? DoctorId { get; set; }
-    public Doctor? Doctor { get; set; }
+    public Guid CabinetId { get; set; }
+    public Cabinet Cabinet { get; set; } = null!;
     public string? Department { get; set; }
     public string? License { get; set; }
 }

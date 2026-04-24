@@ -17,15 +17,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer" Version="5.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Cors" Version="8.0.0" />
     
     <!-- Swagger/OpenAPI -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.4.0" />
-    
-    <!-- SignalR -->
-    <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.JsonHubProtocol" Version="8.0.0" />
     
     <!-- Logging -->
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
@@ -34,19 +29,20 @@
     
     <!-- Validation -->
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+
+    <!-- EF Core Design-time Tools -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
     
     <!-- Mapping -->
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     
     <!-- Mediator -->
-    <PackageReference Include="MediatR" Version="12.1.1" />
+    <PackageReference Include="MediatR" Version="11.1.0" />
     <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
     
     <!-- External Services -->
     <PackageReference Include="Stripe.net" Version="43.0.0" />
-    <PackageReference Include="QuestPDF" Version="2024.2.0" />
-    
-    <!-- Project References -->
+    <PackageReference Include="QuestPDF" Version="2024.3.0" />
     <ProjectReference Include="..\MediLink.Application\MediLink.Application.csproj" />
     <ProjectReference Include="..\MediLink.Infrastructure\MediLink.Infrastructure.csproj" />
     <ProjectReference Include="..\MediLink.Domain\MediLink.Domain.csproj" />

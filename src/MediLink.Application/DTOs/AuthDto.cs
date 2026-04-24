@@ -18,6 +18,7 @@ public class RegisterRequestDto
     public string ConfirmPassword { get; set; } = null!;
     public string PhoneNumber { get; set; } = null!;
     public DateTime DateOfBirth { get; set; }
+    public string Role { get; set; } = "Patient"; // Default to Patient, can be "Patient", "Doctor", "Specialist"
 }
 
 public class AuthResponseDto
@@ -26,6 +27,13 @@ public class AuthResponseDto
     public string RefreshToken { get; set; } = null!;
     public int ExpiresIn { get; set; }
     public UserDto User { get; set; } = null!;
+}
+
+public class RegisterResponseDto
+{
+    public bool Success { get; set; }
+    public string Role { get; set; } = null!;
+    public string Message { get; set; } = null!;
 }
 
 public class RefreshTokenRequestDto

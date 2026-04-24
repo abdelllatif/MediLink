@@ -11,6 +11,7 @@ public abstract class User : BaseEntity
     public string PasswordHash { get; set; } = null!;
     public string FirstName { get; set; } = null!;
     public string LastName { get; set; } = null!;
+    public DateTime DateOfBirth { get; set; }
     public UserRole Role { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime LastLoginAt { get; set; }

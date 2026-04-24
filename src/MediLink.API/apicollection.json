@@ -1,0 +1,290 @@
+{
+  "info": {
+    "name": "MediLink Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection for the MediLink backend REST API"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","auth","register"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password123!\",\n  \"confirmPassword\": \"Password123!\",\n  \"phoneNumber\": \"212600000000\",\n  \"dateOfBirth\": \"1990-01-01T00:00:00Z\",\n  \"role\": \"Nurse\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","auth","login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","auth","refresh"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "Get Patients",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/patients", "host": ["{{baseUrl}}"], "path": ["api","patients"] }
+          }
+        },
+        {
+          "name": "Get Patient By Id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/patients/{{patientId}}", "host": ["{{baseUrl}}"], "path": ["api","patients","{{patientId}}"] }
+          }
+        },
+        {
+          "name": "Search Patients",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/api/patients/search?query={{query}}", "host": ["{{baseUrl}}"], "path": ["api","patients","search"], "query": [{"key": "query", "value": "Amina"}] }
+          }
+        },
+        {
+          "name": "Create Patient",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/patients", "host": ["{{baseUrl}}"], "path": ["api","patients"]},
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Amina\",\n  \"lastName\": \"Bennani\",\n  \"phoneNumber\": \"212600000001\",\n  \"cin\": \"AB123456\",\n  \"dateOfBirth\": \"1991-02-15T00:00:00Z\",\n  \"cabinetId\": \"{{cabinetId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Patient",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/patients/{{patientId}}", "host": ["{{baseUrl}}"], "path": ["api","patients","{{patientId}}"]},
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Amina\",\n  \"phoneNumber\": \"212600000002\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Patient",
+          "request": {
+            "method": "DELETE",
+            "url": {"raw": "{{baseUrl}}/api/patients/{{patientId}}", "host": ["{{baseUrl}}"], "path": ["api","patients","{{patientId}}"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctors",
+      "item": [
+        {
+          "name": "Get Doctors",
+          "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/doctors", "host": ["{{baseUrl}}"], "path": ["api","doctors"]}}
+        },
+        {
+          "name": "Get Doctor By Id",
+          "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/doctors/{{doctorId}}", "host": ["{{baseUrl}}"], "path": ["api","doctors","{{doctorId}}"]}}
+        },
+        {
+          "name": "Create Doctor",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/doctors", "host": ["{{baseUrl}}"], "path": ["api","doctors"]},
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Hakim\",\n  \"lastName\": \"El Amrani\",\n  \"email\": \"hakim@example.com\",\n  \"password\": \"Doctor123!\",\n  \"specialization\": \"General Practice\",\n  \"experienceYears\": 8\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Available Doctor Slots",
+          "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/doctors/{{doctorId}}/available-time-slots?date={{date}}", "host": ["{{baseUrl}}"], "path": ["api","doctors","{{doctorId}}","available-time-slots"], "query": [{"key": "date", "value": "2026-04-18"}]}}
+        },
+        {
+          "name": "Block Day",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/doctors/{{doctorId}}/block-day", "host": ["{{baseUrl}}"], "path": ["api","doctors","{{doctorId}}","block-day"]},
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-04-20T00:00:00Z\",\n  \"reason\": \"Vacation\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Unblock Day",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/doctors/{{doctorId}}/unblock-day", "host": ["{{baseUrl}}"], "path": ["api","doctors","{{doctorId}}","unblock-day"]},
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2026-04-20T00:00:00Z\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "TimeSlots",
+      "item": [
+        {
+          "name": "Get Doctor TimeSlots",
+          "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/timeslots/doctor/{{doctorId}}?date={{date}}", "host": ["{{baseUrl}}"], "path": ["api","timeslots","doctor","{{doctorId}}"], "query": [{"key": "date", "value": "2026-04-18"}]}}
+        },
+        {
+          "name": "Create TimeSlot",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/timeslots", "host": ["{{baseUrl}}"], "path": ["api","timeslots"]},
+            "body": {"mode": "raw","raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"date\": \"2026-04-20T00:00:00Z\",\n  \"startTime\": \"09:00:00\",\n  \"price\": 150.0\n}"}
+          }
+        },
+        {
+          "name": "Generate TimeSlots",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/timeslots/generate", "host": ["{{baseUrl}}"], "path": ["api","timeslots","generate"]},
+            "body": {"mode": "raw","raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"startDate\": \"2026-04-20T00:00:00Z\",\n  \"endDate\": \"2026-04-24T00:00:00Z\",\n  \"price\": 150.0\n}"}
+          }
+        },
+        {
+          "name": "Block Day",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/timeslots/block-day", "host": ["{{baseUrl}}"], "path": ["api","timeslots","block-day"]},
+            "body": {"mode": "raw","raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"date\": \"2026-04-20T00:00:00Z\",\n  \"reason\": \"Sick leave\"\n}"}
+          }
+        },
+        {
+          "name": "Unblock Day",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/timeslots/unblock-day", "host": ["{{baseUrl}}"], "path": ["api","timeslots","unblock-day"]},
+            "body": {"mode": "raw","raw": "{\n  \"doctorId\": \"{{doctorId}}\",\n  \"date\": \"2026-04-20T00:00:00Z\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/appointments/book", "host": ["{{baseUrl}}"], "path": ["api","appointments","book"]},
+            "body": {"mode": "raw","raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"doctorId\": \"{{doctorId}}\",\n  \"timeSlotId\": \"{{timeSlotId}}\",\n  \"symptoms\": \"Fever and cough\"\n}"}
+          }
+        },
+        {
+          "name": "Get Appointment",
+          "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/appointments/{{appointmentId}}", "host": ["{{baseUrl}}"], "path": ["api","appointments","{{appointmentId}}"]}}
+        },
+        {
+          "name": "Get Appointments by Patient",
+          "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/appointments/patient/{{patientId}}", "host": ["{{baseUrl}}"], "path": ["api","appointments","patient","{{patientId}}"]}}
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {"method": "POST", "url": {"raw": "{{baseUrl}}/api/appointments/{{appointmentId}}/cancel", "host": ["{{baseUrl}}"], "path": ["api","appointments","{{appointmentId}}","cancel"]}}
+        },
+        {
+          "name": "Complete Appointment",
+          "request": {"method": "POST", "url": {"raw": "{{baseUrl}}/api/appointments/{{appointmentId}}/complete", "host": ["{{baseUrl}}"], "path": ["api","appointments","{{appointmentId}}","complete"]}}
+        }
+      ]
+    },
+    {
+      "name": "Medical Documents",
+      "item": [
+        {
+          "name": "Create Medical Document",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/api/medicaldocuments", "host": ["{{baseUrl}}"], "path": ["api","medicaldocuments"]},
+            "body": {"mode": "raw","raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"doctorId\": \"{{doctorId}}\",\n  \"diagnosis\": \"Common cold\",\n  \"prescription\": \"Rest and hydration\"\n}"}
+          }
+        },
+        {
+          "name": "Get Document",
+          "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/medicaldocuments/{{documentId}}", "host": ["{{baseUrl}}"], "path": ["api","medicaldocuments","{{documentId}}"]}}
+        },
+        {
+          "name": "Get Documents by Patient",
+          "request": {"method": "GET", "url": {"raw": "{{baseUrl}}/api/medicaldocuments/patient/{{patientId}}", "host": ["{{baseUrl}}"], "path": ["api","medicaldocuments","patient","{{patientId}}"]}}
+        },
+        {
+          "name": "Generate Document PDF",
+          "request": {"method": "POST", "url": {"raw": "{{baseUrl}}/api/medicaldocuments/{{documentId}}/generate-pdf", "host": ["{{baseUrl}}"], "path": ["api","medicaldocuments","{{documentId}}","generate-pdf"]}}
+        },
+        {
+          "name": "Archive Document",
+          "request": {"method": "POST", "url": {"raw": "{{baseUrl}}/api/medicaldocuments/{{documentId}}/archive", "host": ["{{baseUrl}}"], "path": ["api","medicaldocuments","{{documentId}}","archive"]}}
+        }
+      ]
+    }
+  ]
+}

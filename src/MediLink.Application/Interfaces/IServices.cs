@@ -54,6 +54,11 @@ public interface IDoctorService
     Task<IEnumerable<DoctorDto>> GetAllDoctorsAsync();
 
     /// <summary>
+    /// Creates a new doctor.
+    /// </summary>
+    Task<DoctorDto> CreateDoctorAsync(CreateDoctorDto dto);
+
+    /// <summary>
     /// Gets available time slots for a doctor on a specific date.
     /// </summary>
     Task<IEnumerable<TimeSlotDto>> GetAvailableTimeSlotsAsync(Guid doctorId, DateTime date);
@@ -90,6 +95,11 @@ public interface IAppointmentService
     Task<IEnumerable<AppointmentDto>> GetPatientAppointmentsAsync(Guid patientId);
 
     /// <summary>
+    /// Gets all appointments for today.
+    /// </summary>
+    Task<IEnumerable<AppointmentDto>> GetTodayAppointmentsAsync();
+
+    /// <summary>
     /// Cancels an appointment.
     /// </summary>
     Task CancelAppointmentAsync(Guid id);
@@ -98,6 +108,11 @@ public interface IAppointmentService
     /// Completes an appointment.
     /// </summary>
     Task CompleteAppointmentAsync(Guid id);
+
+    /// <summary>
+    /// Records vitals for an appointment.
+    /// </summary>
+    Task<AppointmentDto> UpdateVitalsAsync(Guid id, UpdateVitalsDto dto);
 }
 
 /// <summary>
@@ -131,28 +146,4 @@ public interface IMedicalDocumentService
     Task ArchiveDocumentAsync(Guid id);
 }
 
-/// <summary>
-/// Interface for payment service operations.
-/// </summary>
-public interface IPaymentService
-{
-    /// <summary>
-    /// Creates a Stripe checkout session.
-    /// </summary>
-    Task<string> CreateCheckoutSessionAsync(Guid appointmentId);
 
-    /// <summary>
-    /// Gets a payment by ID.
-    /// </summary>
-    Task<PaymentDto?> GetPaymentAsync(Guid id);
-
-    /// <summary>
-    /// Processes a Stripe webhook event.
-    /// </summary>
-    Task ProcessWebhookAsync(string json, string signature);
-
-    /// <summary>
-    /// Gets all payments for an appointment.
-    /// </summary>
-    Task<IEnumerable<PaymentDto>> GetAppointmentPaymentsAsync(Guid appointmentId);
-}

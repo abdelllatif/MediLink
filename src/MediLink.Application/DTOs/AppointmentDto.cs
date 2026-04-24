@@ -12,6 +12,12 @@ public class AppointmentDto
     public string Status { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public DateTime CreatedAt { get; set; }
+
+    // Vitals
+    public string? BloodPressure { get; set; }
+    public int? HeartRate { get; set; }
+    public decimal? Temperature { get; set; }
+    public decimal? Weight { get; set; }
 }
 
 /// <summary>
@@ -29,4 +35,15 @@ public class CreateAppointmentDto
 public class UpdateAppointmentStatusDto
 {
     public string Status { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// DTO for recording vitals.
+/// </summary>
+public class UpdateVitalsDto
+{
+    public string? BloodPressure { get; set; }
+    public int? HeartRate { get; set; }
+    public decimal? Temperature { get; set; }
+    public decimal? Weight { get; set; }
 }

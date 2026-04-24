@@ -57,6 +57,8 @@ public class TimeSlotService : ITimeSlotService
     public async Task<TimeSlotDto> CreateTimeSlotAsync(CreateTimeSlotDto dto)
     {
         var timeSlot = _mapper.Map<TimeSlot>(dto);
+        timeSlot.EndTime = dto.StartTime.Add(TimeSpan.FromMinutes(30));
+        timeSlot.Status = TimeSlotStatus.Available;
         await _repository.AddAsync(timeSlot);
         return _mapper.Map<TimeSlotDto>(timeSlot);
     }

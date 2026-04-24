@@ -10,24 +10,43 @@ public class MappingProfile : AutoMapper.Profile
 {
     public MappingProfile()
     {
-        // Patient Mappings
         CreateMap<Patient, PatientDto>()
+            .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.PhoneNumber))
             .ReverseMap();
 
-        // Doctor Mappings
+        CreateMap<CreatePatientDto, Patient>();
+
+        CreateMap<UpdatePatientDto, Patient>()
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
         CreateMap<Doctor, DoctorDto>()
-            .ReverseMap();
+            .ForMember(dest => dest.IsAvailable, opt => opt.Ignore());
 
-        // Appointment Mappings
+        CreateMap<CreateDoctorDto, Doctor>()
+            .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(_ => Domain.Enums.UserRole.Generalist));
+
         CreateMap<Appointment, AppointmentDto>()
+            .ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.TotalAmount))
             .ReverseMap();
 
-        // TimeSlot Mappings
+        CreateMap<CreateAppointmentDto, Appointment>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(_ => Domain.Enums.AppointmentStatus.Scheduled))
+            .ForMember(dest => dest.TotalAmount, opt => opt.Ignore());
+
         CreateMap<TimeSlot, TimeSlotDto>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
             .ReverseMap();
 
-        // MedicalDocument Mappings
+        CreateMap<CreateTimeSlotDto, TimeSlot>()
+            .ForMember(dest => dest.Status, opt => opt.MapFrom(_ => Domain.Enums.TimeSlotStatus.Available));
+
         CreateMap<MedicalDocument, MedicalDocumentDto>()
             .ReverseMap();
+
+        CreateMap<CreateMedicalDocumentDto, MedicalDocument>()
+            .ForMember(dest => dest.Total, opt => opt.Ignore())
+            .ForMember(dest => dest.IsArchived, opt => opt.MapFrom(_ => false));
+
     }
 }

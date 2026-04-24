@@ -1,7 +1,9 @@
-namespace MediLink.Application.Services;
+﻿namespace MediLink.Application.Services;
 
+using System.Collections.Concurrent;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using BCrypt.Net;
 using Microsoft.Extensions.Configuration;
@@ -17,12 +19,15 @@ using MediLink.Infrastructure.Repositories;
 public interface IAuthService
 {
     Task<AuthResponseDto> LoginAsync(LoginRequestDto request);
-    Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request);
+    Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request);
     Task<AuthResponseDto> RefreshTokenAsync(string refreshToken);
 }
 
 public class AuthService : IAuthService
 {
+    private static readonly ConcurrentDictionary<string, RefreshTokenInfo> RefreshTokens =
+        new(StringComparer.OrdinalIgnoreCase);
+
     private readonly IRepository<User> _userRepository;
     private readonly IConfiguration _configuration;
 
@@ -34,10 +39,9 @@ public class AuthService : IAuthService
 
     public async Task<AuthResponseDto> LoginAsync(LoginRequestDto request)
     {
-        var user = (await _userRepository.GetAllAsync())
-            .FirstOrDefault(u => u.Email == request.Email && !u.IsDeleted);
+        var user = await _userRepository.FirstOrDefaultAsync(u => u.Email == request.Email && !u.IsDeleted);
 
-        if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+        if (user == null || !BCrypt.Verify(request.Password, user.PasswordHash))
         {
             throw new UnauthorizedAccessException("Invalid email or password");
         }
@@ -51,13 +55,128 @@ public class AuthService : IAuthService
         await _userRepository.UpdateAsync(user);
 
         var token = GenerateJwtToken(user);
-        var refreshToken = GenerateRefreshToken();
+        var refreshToken = CreateRefreshToken(user.Id);
 
+        return BuildAuthResponse(user, token, refreshToken);
+    }
+
+    public async Task<RegisterResponseDto> RegisterAsync(RegisterRequestDto request)
+    {
+        if (request.Password != request.ConfirmPassword)
+        {
+            throw new ArgumentException("Passwords do not match");
+        }
+
+        var existingUser = await _userRepository.FirstOrDefaultAsync(u => u.Email == request.Email && !u.IsDeleted);
+        if (existingUser != null)
+        {
+            throw new InvalidOperationException("User with this email already exists");
+        }
+
+        User user;
+        string role;
+        switch (request.Role?.ToLower())
+        {
+            case "doctor":
+            case "generalist":
+                user = new Doctor
+                {
+                    Email = request.Email,
+                    PasswordHash = BCrypt.HashPassword(request.Password),
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    PhoneNumber = request.PhoneNumber,
+                    DateOfBirth = request.DateOfBirth,
+                    Role = UserRole.Generalist,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    Specialization = "General Medicine", // Default, can be updated later
+                    CabinetName = "To be defined", // Default, can be updated later
+                    CabinetPhone = request.PhoneNumber,
+                    CabinetAddress = "To be defined", // Default, can be updated later
+                    IsVerified = false
+                };
+                role = "Doctor";
+                break;
+
+            case "specialist":
+                user = new Specialist
+                {
+                    Email = request.Email,
+                    PasswordHash = BCrypt.HashPassword(request.Password),
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    PhoneNumber = request.PhoneNumber,
+                    DateOfBirth = request.DateOfBirth,
+                    Role = UserRole.Specialist,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    Specialization = "Specialist", // Default, can be updated later
+                    IsVerified = false
+                };
+                role = "Specialist";
+                break;
+
+            case "patient":
+            default:
+                user = new Patient
+                {
+                    Email = request.Email,
+                    PasswordHash = BCrypt.HashPassword(request.Password),
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    PhoneNumber = request.PhoneNumber,
+                    DateOfBirth = request.DateOfBirth,
+                    Role = UserRole.Patient,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                role = "Patient";
+                break;
+        }
+
+        await _userRepository.AddAsync(user);
+
+        return new RegisterResponseDto
+        {
+            Success = true,
+            Role = role,
+            Message = $"User registered successfully as {role}"
+        };
+    }
+
+    public async Task<AuthResponseDto> RefreshTokenAsync(string refreshToken)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken) || !RefreshTokens.TryGetValue(refreshToken, out var tokenInfo))
+        {
+            throw new UnauthorizedAccessException("Invalid refresh token");
+        }
+
+        if (tokenInfo.ExpiresAt < DateTime.UtcNow)
+        {
+            RefreshTokens.TryRemove(refreshToken, out _);
+            throw new UnauthorizedAccessException("Refresh token expired");
+        }
+
+        var user = await _userRepository.GetByIdAsync(tokenInfo.UserId);
+        if (user == null || user.IsDeleted)
+        {
+            throw new UnauthorizedAccessException("Invalid user for refresh token");
+        }
+
+        var jwt = GenerateJwtToken(user);
+        var newRefreshToken = CreateRefreshToken(user.Id);
+
+        return BuildAuthResponse(user, jwt, newRefreshToken);
+    }
+
+    private static AuthResponseDto BuildAuthResponse(User user, string token, string refreshToken)
+    {
         return new AuthResponseDto
         {
             Token = token,
             RefreshToken = refreshToken,
-            ExpiresIn = int.Parse(_configuration["Jwt:ExpiryMinutes"] ?? "60") * 60,
+            ExpiresIn = 60 * 60,
             User = new UserDto
             {
                 Id = user.Id,
@@ -71,63 +190,19 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<AuthResponseDto> RegisterAsync(RegisterRequestDto request)
+    private string CreateRefreshToken(Guid userId)
     {
-        // Validate passwords match
-        if (request.Password != request.ConfirmPassword)
-        {
-            throw new ArgumentException("Passwords do not match");
-        }
+        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        var expiresAt = DateTime.UtcNow.AddDays(int.Parse(_configuration["Jwt:RefreshTokenExpiryDays"] ?? "7"));
 
-        // Check if email already exists
-        var existingUser = (await _userRepository.GetAllAsync())
-            .FirstOrDefault(u => u.Email == request.Email && !u.IsDeleted);
-
-        if (existingUser != null)
+        var tokenInfo = new RefreshTokenInfo
         {
-            throw new InvalidOperationException("User with this email already exists");
-        }
-
-        // Create new patient
-        var patient = new Patient
-        {
-            Email = request.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
-            FirstName = request.FirstName,
-            LastName = request.LastName,
-            PhoneNumber = request.PhoneNumber,
-            DateOfBirth = request.DateOfBirth,
-            Role = UserRole.Patient,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            UserId = userId,
+            ExpiresAt = expiresAt
         };
 
-        await _userRepository.AddAsync(patient);
-
-        var token = GenerateJwtToken(patient);
-        var refreshToken = GenerateRefreshToken();
-
-        return new AuthResponseDto
-        {
-            Token = token,
-            RefreshToken = refreshToken,
-            ExpiresIn = int.Parse(_configuration["Jwt:ExpiryMinutes"] ?? "60") * 60,
-            User = new UserDto
-            {
-                Id = patient.Id,
-                Email = patient.Email,
-                FirstName = patient.FirstName,
-                LastName = patient.LastName,
-                Role = patient.Role.ToString(),
-                PhoneNumber = patient.PhoneNumber
-            }
-        };
-    }
-
-    public Task<AuthResponseDto> RefreshTokenAsync(string refreshToken)
-    {
-        // TODO: Implement refresh token logic
-        throw new NotImplementedException("Refresh token functionality not implemented yet");
+        RefreshTokens[token] = tokenInfo;
+        return token;
     }
 
     private string GenerateJwtToken(User user)
@@ -156,11 +231,9 @@ public class AuthService : IAuthService
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
 
-    private string GenerateRefreshToken()
+    private sealed class RefreshTokenInfo
     {
-        var randomNumber = new byte[64];
-        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
-        rng.GetBytes(randomNumber);
-        return Convert.ToBase64String(randomNumber);
+        public Guid UserId { get; init; }
+        public DateTime ExpiresAt { get; init; }
     }
 }

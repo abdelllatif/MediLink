@@ -22,6 +22,7 @@ public class AppDbContext : DbContext
     public DbSet<Specialist> Specialists { get; set; } = null!;
     public DbSet<Nurse> Nurses { get; set; } = null!;
     public DbSet<Admin> Admins { get; set; } = null!;
+    public DbSet<Cabinet> Cabinets { get; set; } = null!;
     #endregion
 
     #region DbSets - Medical
@@ -32,8 +33,6 @@ public class AppDbContext : DbContext
     public DbSet<BlockedDay> BlockedDays { get; set; } = null!;
     #endregion
 
-    #region DbSets - Payments
-    public DbSet<Payment> Payments { get; set; } = null!;
     #endregion
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -43,7 +42,6 @@ public class AppDbContext : DbContext
         // Configure TPH (Table-Per-Hierarchy) inheritance for User
         modelBuilder.Entity<User>()
             .HasDiscriminator<string>("UserType")
-            .HasValue<Patient>("Patient")
             .HasValue<Doctor>("Doctor")
             .HasValue<Specialist>("Specialist")
             .HasValue<Nurse>("Nurse")
@@ -63,15 +61,33 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.IsDeleted);
         });
 
+        // Configure Cabinet
+        modelBuilder.Entity<Cabinet>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Address).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Email).HasMaxLength(255);
+        });
+
         // Configure Patient
         modelBuilder.Entity<Patient>(entity =>
         {
-            entity.ToTable("Users");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PhoneNumber).HasMaxLength(20);
             entity.Property(e => e.CIN).HasMaxLength(20);
             entity.Property(e => e.Gender).HasMaxLength(10);
             entity.Property(e => e.BloodType).HasMaxLength(5);
             entity.Property(e => e.Allergies).HasMaxLength(500);
             entity.OwnsOne(e => e.Address);
+            
+            // Many-to-many relationship
+            entity.HasMany(e => e.Cabinets)
+                  .WithMany(c => c.Patients)
+                  .UsingEntity("PatientCabinet");
         });
 
         // Configure Doctor
@@ -79,11 +95,9 @@ public class AppDbContext : DbContext
         {
             entity.ToTable("Users");
             entity.Property(e => e.Specialization).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.CabinetName).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.CabinetPhone).IsRequired().HasMaxLength(20);
-            entity.Property(e => e.CabinetAddress).IsRequired().HasMaxLength(500);
             entity.Property(e => e.LicenseNumber).HasMaxLength(50);
             entity.Property(e => e.ConsultationPrice).HasPrecision(10, 2);
+            entity.HasOne(e => e.Cabinet).WithMany(c => c.Doctors).HasForeignKey(e => e.CabinetId);
             entity.HasIndex(e => e.IsVerified);
         });
 
@@ -104,7 +118,7 @@ public class AppDbContext : DbContext
             entity.ToTable("Users");
             entity.Property(e => e.Department).HasMaxLength(100);
             entity.Property(e => e.License).HasMaxLength(50);
-            entity.HasOne(e => e.Doctor).WithMany().HasForeignKey(e => e.DoctorId);
+            entity.HasOne(e => e.Cabinet).WithMany(c => c.Nurses).HasForeignKey(e => e.CabinetId);
         });
 
         // Configure Admin
@@ -137,6 +151,11 @@ public class AppDbContext : DbContext
             entity.Property(e => e.TotalAmount).HasPrecision(10, 2);
             entity.HasOne(e => e.Patient).WithMany(p => p.Appointments).HasForeignKey(e => e.PatientId);
             entity.HasOne(e => e.Doctor).WithMany(d => d.Appointments).HasForeignKey(e => e.DoctorId);
+            // One-to-one: Appointment -> MedicalDocument
+            entity.HasOne<MedicalDocument>()
+                .WithOne(m => m.Appointment)
+                .HasForeignKey<MedicalDocument>(m => m.AppointmentId)
+                .IsRequired(false);
             entity.HasIndex(e => new { e.PatientId, e.Status });
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.CreatedAt);
@@ -168,23 +187,6 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.MedicalDocument).WithMany(d => d.MedicalActs).HasForeignKey(e => e.MedicalDocumentId);
         });
 
-        // Configure Payment
-        modelBuilder.Entity<Payment>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Amount).HasPrecision(10, 2);
-            entity.Property(e => e.Currency).HasMaxLength(3);
-            entity.Property(e => e.StripeTransactionId).HasMaxLength(100);
-            entity.Property(e => e.StripeSessionId).HasMaxLength(200);
-            entity.Property(e => e.FailureReason).HasMaxLength(500);
-            entity.HasOne(e => e.Appointment).WithOne(a => a.Payment).HasForeignKey<Payment>(e => e.AppointmentId);
-            entity.HasOne(e => e.MedicalDocument).WithOne().HasForeignKey<Payment>(e => e.MedicalDocumentId);
-            entity.HasOne(e => e.Patient).WithMany(p => p.Payments).HasForeignKey(e => e.PatientId);
-            entity.HasIndex(e => e.StripeTransactionId).IsUnique();
-            entity.HasIndex(e => e.Status);
-            entity.HasIndex(e => e.PatientId);
-        });
-
         // Configure BlockedDay
         modelBuilder.Entity<BlockedDay>(entity =>
         {
@@ -195,20 +197,5 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => new { e.DoctorId, e.Date });
         });
 
-        // Set default values
-        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-        {
-            var properties = entityType.FindPrimaryKey()?.Properties;
-            if (properties != null)
-            {
-                foreach (var property in properties)
-                {
-                    if (property.ClrType == typeof(Guid))
-                    {
-                        property.SetDefaultValueSql("NEWID()");
-                    }
-                }
-            }
-        }
     }
 }

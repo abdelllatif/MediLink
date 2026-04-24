@@ -5,10 +5,13 @@ using MediLink.Domain.ValueObjects;
 /// <summary>
 /// Patient entity - Represents a patient in the system
 /// </summary>
-public class Patient : User
+public class Patient : BaseEntity
 {
-    public string? CIN { get; set; }
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
     public DateTime DateOfBirth { get; set; }
+    public string? PhoneNumber { get; set; }
+    public string? CIN { get; set; }
     public Address? Address { get; set; }
     public string? Gender { get; set; }
     public string? BloodType { get; set; }
@@ -17,7 +20,8 @@ public class Patient : User
     // Navigation Properties
     public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
     public ICollection<MedicalDocument> MedicalDocuments { get; set; } = new List<MedicalDocument>();
-    public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+    public ICollection<Cabinet> Cabinets { get; set; } = new List<Cabinet>();
 
     public int GetAge() => DateTime.Now.Year - DateOfBirth.Year;
+    public string GetFullName() => $"{FirstName} {LastName}";
 }
